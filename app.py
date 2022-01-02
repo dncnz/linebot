@@ -5,7 +5,7 @@ from flask import Flask, jsonify, request, abort, send_file
 from dotenv import load_dotenv
 from linebot import LineBotApi, WebhookParser
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.models import *
 
 from fsm import TocMachine
 from utils import send_text_message
@@ -14,23 +14,64 @@ load_dotenv()
 
 
 machine = TocMachine(
-    states=["user", "state1", "state2"],
+    states=["main_menu", "breakfast", "hamberger", "b_info", "b_price", "b_health", "h_info", "h_price", "h_health"],
     transitions=[
         {
             "trigger": "advance",
-            "source": "user",
-            "dest": "state1",
-            "conditions": "is_going_to_state1",
+            "source": ["main_menu", "breakfast", "hamberger","b_info", "b_price", "b_health", "h_info", "h_price", "h_health"],
+            "dest": "main_menu",
+            "conditions": "is_going_to_main_menu",
         },
         {
             "trigger": "advance",
-            "source": "user",
-            "dest": "state2",
-            "conditions": "is_going_to_state2",
+            "source": ["main_menu", "b_info", "b_price", "b_health"],
+            "dest": "breakfast",
+            "conditions": "is_going_to_breakfast",
         },
-        {"trigger": "go_back", "source": ["state1", "state2"], "dest": "user"},
+        {
+            "trigger": "advance",
+            "source": ["main_menu", "h_info", "h_price", "h_health"],
+            "dest": "hamberger",
+            "conditions": "is_going_to_hamberger",
+        },
+        {
+            "trigger": "advance",
+            "source": "breakfast",
+            "dest": "b_info",
+            "conditions": "is_going_to_b_info",
+        },
+        {
+            "trigger": "advance",
+            "source": "hamberger",
+            "dest": "h_info",
+            "conditions": "is_going_to_h_info",
+        },
+        {
+            "trigger": "advance",
+            "source": ["b_info", "b_health"],
+            "dest": "b_price",
+            "conditions": "is_going_to_b_price",
+        },
+        {
+            "trigger": "advance",
+            "source": ["h_info", "h_health"],
+            "dest": "h_price",
+            "conditions": "is_going_to_h_price",
+        },
+        {
+            "trigger": "advance",
+            "source": ["b_info", "b_price"],
+            "dest": "b_health",
+            "conditions": "is_going_to_b_health",
+        },
+        {
+            "trigger": "advance",
+            "source": ["h_info", "h_price"],
+            "dest": "h_health",
+            "conditions": "is_going_to_h_health",
+        },
     ],
-    initial="user",
+    initial="main_menu",
     auto_transitions=False,
     show_conditions=True,
 )
@@ -104,7 +145,7 @@ def webhook_handler():
         print(f"REQUEST BODY: \n{body}")
         response = machine.advance(event)
         if response == False:
-            send_text_message(event.reply_token, "Not Entering any State")
+            send_text_message(event.reply_token, "請依指示操作")
 
     return "OK"
 
