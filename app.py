@@ -84,14 +84,13 @@ def webhook_handler():
         if event.source.user_id not in machines:
             machines[event.source.user_id] = new_machine()
 
-        print(f"\nFSM STATE: {machine.state}")
+        print(f"\nFSM STATE: {machines[event.source.user_id].state}")
         print(f"REQUEST BODY: \n{body}")
-        response = machine.advance(event)
+        response = machines[event.source.user_id].advance(event)
         if response == False:
             send_text_message(event.reply_token, "請依指示操作")
 
     return "OK"
-
 
 @app.route("/show-fsm", methods=["GET"])
 def show_fsm():
